@@ -829,5 +829,5 @@ for place in ['San Francisco']:
 
 
     lines_to_update3.groupby(level=group_name).apply(update_network_with_aggregated_point)
-    network_new.drop(columns=[line_name, 'bearing']).to_file(f'{data_folder}/network_new.shp')
     final2.network.drop(columns=[line_name, 'bearing']).to_file(f'{data_folder}/network.shp')
+    network_new.drop(columns=[line_name, 'bearing']).to_file(f'{data_folder}/network_new.shp')
