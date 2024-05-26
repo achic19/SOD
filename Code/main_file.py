@@ -29,8 +29,7 @@ from math import log2
 # In this example, the data is extracted from OSM by specifying a location's name The code is designed to handle multiple polygons or location names seamlessly.
 
 # Download data from OpenStreetMap, project it, and convert it to a GeoDataFrame. OSMnx automatically resolves topology errors and retrieves only the street-related polylines.
-
-for place in ['Turin']:
+for place in ['San Francisco']:
     if place == 'Tel Aviv':
         useful_tags_path = ['name:en', 'highway', 'length', 'bearing', 'tunnel', 'junction']
         ox.utils.config(useful_tags_way=useful_tags_path)
@@ -195,6 +194,12 @@ for place in ['Turin']:
         dic_final['is_simplified'].append(is_simplified)
 
 
+    # Function to calculate circular_distance
+    def circular_distance(angle1, angle2):
+        diff = np.abs(angle1 - angle2) % 180
+        return np.minimum(diff, 180 - diff)
+
+
     # Initiate dic_final here for @def update_df_with_center_line
     dic_final = {'name': [], 'geometry': [], 'highway': [], 'bearing': [], 'group': [], 'is_simplified': []}
 
@@ -214,7 +219,17 @@ for place in ['Turin']:
                 _ = res['geometry'].apply(lambda x: update_df_with_center_line(x))
                 continue
             # Use DBSCAN to classify streets based on their angle, and group each class. Outliers could not consider parallel with any street, thus removed
-            res['group'] = DBSCAN(eps=10, min_samples=2).fit(res['angle'].to_numpy().reshape(-1, 1)).labels_
+            angles = res['angle'].to_numpy()
+            # Compute pairwise distances between angles
+            pairwise_distances = np.zeros((len(angles), len(angles)))
+            for i in range(len(angles)):
+                for j in range(len(angles)):
+                    pairwise_distances[i, j] = circular_distance(angles[i], angles[j])
+            # Use DBSCAN
+            epsilon = 10
+            min_samples = 2  # Adjust as needed
+            dbscan = DBSCAN(eps=epsilon, min_samples=min_samples, metric='precomputed')
+            res['group'] = dbscan.fit_predict(pairwise_distances)
             # if all is -1, don't touch the element
             if (res['group'] == -1).all():
                 data = res
@@ -527,8 +542,9 @@ for place in ['Turin']:
         def __from_roundabout_to_centroid(self):
             # Find the center of each roundabout
             # create polygon around each polygon and union
-            round_about_buffer = my_preprocessing.round_about.to_crs(project_crs)['geometry'].buffer(cap_style=1, distance=10,
-                                                                                    join_style=1).unary_union
+            round_about_buffer = my_preprocessing.round_about.to_crs(project_crs)['geometry'].buffer(cap_style=1,
+                                                                                                     distance=10,
+                                                                                                     join_style=1).unary_union
             dic_data = {'name': [], 'geometry': []}
             if round_about_buffer.type == 'Polygon':  # In case we have only one polygon
                 dic_data['name'].append(0)
