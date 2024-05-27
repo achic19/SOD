@@ -29,7 +29,9 @@ from math import log2
 # In this example, the data is extracted from OSM by specifying a location's name The code is designed to handle multiple polygons or location names seamlessly.
 
 # Download data from OpenStreetMap, project it, and convert it to a GeoDataFrame. OSMnx automatically resolves topology errors and retrieves only the street-related polylines.
-for place in ['San Francisco']:
+for place in ['Tel Aviv']:
+
+
     if place == 'Tel Aviv':
         useful_tags_path = ['name:en', 'highway', 'length', 'bearing', 'tunnel', 'junction']
         ox.utils.config(useful_tags_way=useful_tags_path)
@@ -43,6 +45,7 @@ for place in ['San Francisco']:
     df_pro = my_preprocessing.first_filtering()
     df_pro.to_file(f'{data_folder}/before_df.shp')
     print('calculate simplification')
+
 
 
     # Functions and classes to be utilized - Module 2
@@ -533,16 +536,17 @@ for place in ['San Francisco']:
 
 
     class Roundabout(EnvEntity):
-        def __init__(self, network: GeoDataFrame):
+
+        def __init__(self, network: GeoDataFrame,oundabout_as_poly):
             EnvEntity.__init__(self, network)
             self.pnt_dic = {}
-            self.centroid = self.__from_roundabout_to_centroid()
+            self.centroid = self.__from_roundabout_to_centroid(oundabout_as_poly)
             self.network.rename(columns={'name': 'str_name'}, inplace=True)
 
-        def __from_roundabout_to_centroid(self):
+        def __from_roundabout_to_centroid(self,roundabout_file):
             # Find the center of each roundabout
             # create polygon around each polygon and union
-            round_about_buffer = my_preprocessing.round_about.to_crs(project_crs)['geometry'].buffer(cap_style=1,
+            round_about_buffer = roundabout_file.to_crs(project_crs)['geometry'].buffer(cap_style=1,
                                                                                                      distance=10,
                                                                                                      join_style=1).unary_union
             dic_data = {'name': [], 'geometry': []}
@@ -634,16 +638,19 @@ for place in ['San Francisco']:
             return change_geo
 
 
+
     num = 0
     new_gpd = new_network.copy()
     obj_intersection = Intersection(new_gpd, num)
     obj_intersection.intersection_network()
     obj_intersection.update_names(new_gpd)
+
+
     line_name = 'line_name'
     if my_preprocessing.is_junction:
         print('Update roundabout')
         exist_data = obj_intersection.my_network.reset_index().reset_index(names=line_name)
-        my_roundabout = Roundabout(exist_data)
+        my_roundabout = Roundabout(exist_data,my_preprocessing.round_about)
         deadend_lines, deadend_pnts = my_roundabout.deadend()
 
         # update the current network
@@ -708,7 +715,6 @@ for place in ['San Francisco']:
         new_network2 = new_network1[new_network1['geometry'].apply(remove_self_intersecting)]
     else:
         new_network2 = obj_intersection.my_network.reset_index()
-
     extend_lines_f = extend_lines(new_network2, 100)
     extend_lines_f['length'] = extend_lines_f.length
 
@@ -722,6 +728,7 @@ for place in ['San Francisco']:
     # Clear short segments
     final2 = EnvEntity(obj_intersection_1.my_network.reset_index())
     final2.update_the_current_network(final2.get_deadend_gdf(delete_short=100))
+
 
     # Aggregation
     print('Aggregate intersections')
