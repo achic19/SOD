@@ -3,7 +3,7 @@ name: Sync Selected Files
 on:
   push:
     branches:
-      - main  # Replace with the branch you want to monitor
+      - main  # Replace with the branch you want to monitor- test
 
 jobs:
   sync:
