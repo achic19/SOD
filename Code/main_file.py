@@ -15,7 +15,8 @@ import warnings
 import pandas as pd
 
 from tqdm import tqdm
-
+import sys
+sys.setrecursionlimit(5000)  # Set to a higher limit
 warnings.filterwarnings(action='ignore')
 from momepy import extend_lines
 
@@ -27,7 +28,7 @@ from math import log2
 # In this example, the data is extracted from OSM by specifying a location's name The code is designed to handle multiple polygons or location names seamlessly.
 # 'San Francisco, California','Turin,Italy'
 # Download data from OpenStreetMap, project it, and convert it to a GeoDataFrame. OSMnx automatically resolves topology errors and retrieves only the street-related polylines.
-for place in ['Nairobi County']:
+for place in ['Göteborg, Sweden']:
 
     if place == 'Tel Aviv':
         useful_tags_path = ['name:en', 'highway', 'length', 'bearing', 'tunnel', 'junction']
@@ -210,6 +211,7 @@ for place in ['Nairobi County']:
         for i, street in enumerate(my_groupby):
             res = street[1]  # it holds all the streets
             name = street[0]  # It holds the streets name
+            print(name)
             pbar.update(1)  # for the progress bar
             # Remove segments without angle. If less than two segments being left move to the next group.
             res = res.dropna(subset=['angle'], axis=0)
@@ -364,7 +366,7 @@ for place in ['Nairobi County']:
     # Clear short segments
     final2 = EnvEntity(obj_intersection_1.my_network.reset_index())
     final2.update_the_current_network(final2.get_deadend_gdf(delete_short=100))
-    final2.network.drop(columns=[line_name, 'bearing']).to_file(f'{data_folder}/network.shp')
+    final2.network.drop(columns=['bearing']).to_file(f'{data_folder}/network.shp')
 
     # Aggregation
     print('Aggregate intersections')
@@ -473,4 +475,4 @@ for place in ['Nairobi County']:
 
     lines_to_update3.groupby(level=group_name).apply(update_network_with_aggregated_point)
     network_new['length'] = network_new.length
-    network_new.drop(columns=[line_name, 'bearing']).to_file(f'{data_folder}/network_new.shp')
+    network_new.drop(columns=[ 'bearing']).to_file(f'{data_folder}/network_new.shp')
