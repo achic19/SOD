@@ -1,0 +1,28 @@
+name: Sync Selected Files
+
+on:
+  push:
+    branches:
+      - main  # Replace with the branch you want to monitor- test
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source repository
+        uses: actions/checkout@v3
+
+      - name: Clone the target repository
+        run: |
+          git clone https://achic19:${{ secrets.REPO_PAT }}@github.com/achic19/micro_walking.git target-repo
+          cd target-repo
+
+      - name: Copy specific files
+        run: |
+          cp Code/general_functions.py target-repo/notebook/output/turin/general_functions.py
+          cp Code/Code/main_file.py target-repo/notebook/output/turin/main_file.py
+          cd target-repo
+          git add .
+          git commit -m "Sync selected files from source repository"
+          git push origin main
