@@ -28,7 +28,7 @@ from math import log2
 # In this example, the data is extracted from OSM by specifying a location's name The code is designed to handle multiple polygons or location names seamlessly.
 # 'San Francisco, California','Turin,Italy'
 # Download data from OpenStreetMap, project it, and convert it to a GeoDataFrame. OSMnx automatically resolves topology errors and retrieves only the street-related polylines.
-for place in ['Göteborg, Sweden']:
+for place in ['Uherské Hradiště']:
 
     if place == 'Tel Aviv':
         useful_tags_path = ['name:en', 'highway', 'length', 'bearing', 'tunnel', 'junction']
@@ -37,7 +37,7 @@ for place in ['Göteborg, Sweden']:
     data_folder = my_preprocessing.create_folder()
     graph = ox.graph_from_place(place, network_type='all')
     print('finish to download data')
-    graph = ox.bearing.add_edge_bearings(graph, precision=1)
+    graph = ox.bearing.add_edge_bearings(graph)
     graph_pro = ox.projection.project_graph(graph, to_crs=project_crs)
     io.save_graph_geopackage(graph_pro, filepath=f'{data_folder}/osm_data.gpkg', encoding='utf-8', directed=False)
     df_pro = my_preprocessing.first_filtering()
@@ -211,7 +211,6 @@ for place in ['Göteborg, Sweden']:
         for i, street in enumerate(my_groupby):
             res = street[1]  # it holds all the streets
             name = street[0]  # It holds the streets name
-            print(name)
             pbar.update(1)  # for the progress bar
             # Remove segments without angle. If less than two segments being left move to the next group.
             res = res.dropna(subset=['angle'], axis=0)
@@ -370,8 +369,8 @@ for place in ['Göteborg, Sweden']:
 
     # Aggregation
     print('Aggregate intersections')
-    network = final2.network
-
+    network = final2.network.copy()
+    print(network.columns)
     # 1. Get the first/start of each line
     # Extract unique start and end points from all LineStrings
     geometry = 'geometry'
